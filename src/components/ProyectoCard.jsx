@@ -3,7 +3,12 @@ import AppContext from '../context/AppContext'
 import TareaCard from './TareaCard'
 
 const ProyectoCard = ({ project }) => {
-  const { addTask, setDefaultProject } = useContext(AppContext)
+  const {
+    addTask,
+    setDefaultProject,
+    editProject,
+    deleteProject,
+  } = useContext(AppContext)
   const [showTasks, setShowTasks] = useState(false)
   const [taskTitle, setTaskTitle] = useState('')
   const [taskHours, setTaskHours] = useState('0')
@@ -24,14 +29,33 @@ const ProyectoCard = ({ project }) => {
         >
           {project.name}
         </h2>
-        <button
-          className={
-            project.isDefault ? 'text-yellow-500 font-bold' : 'text-gray-400'
-          }
-          onClick={() => setDefaultProject(project.id)}
-        >
-          ★
-        </button>
+        <div className="space-x-2 text-sm">
+          <button
+            className={
+              project.isDefault ? 'text-yellow-500 font-bold' : 'text-gray-400'
+            }
+            onClick={() => setDefaultProject(project.id)}
+          >
+            ★
+          </button>
+          <button
+            className="text-blue-600"
+            onClick={() => {
+              const name = prompt('Nuevo nombre', project.name)
+              if (name) editProject(project.id, name)
+            }}
+          >
+            Editar
+          </button>
+          <button
+            className="text-red-600"
+            onClick={() => {
+              if (confirm('Eliminar proyecto?')) deleteProject(project.id)
+            }}
+          >
+            Eliminar
+          </button>
+        </div>
       </div>
       {showTasks && (
         <div className="mt-3 space-y-2">
