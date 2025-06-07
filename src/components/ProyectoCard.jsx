@@ -3,7 +3,7 @@ import AppContext from '../context/AppContext'
 import TareaCard from './TareaCard'
 
 const ProyectoCard = ({ project }) => {
-  const { addTask } = useContext(AppContext)
+  const { addTask, setDefaultProject } = useContext(AppContext)
   const [showTasks, setShowTasks] = useState(false)
   const [taskTitle, setTaskTitle] = useState('')
 
@@ -14,25 +14,39 @@ const ProyectoCard = ({ project }) => {
   }
 
   return (
-    <div className="border p-2 mb-2">
+    <div className="bg-white rounded-lg border border-gray-300 p-4 mb-4 shadow-sm">
       <div className="flex justify-between items-center">
-        <h2 className="font-bold" onClick={() => setShowTasks(!showTasks)}>
+        <h2
+          className="font-semibold text-lg cursor-pointer text-gray-800"
+          onClick={() => setShowTasks(!showTasks)}
+        >
           {project.name}
         </h2>
+        <button
+          className={
+            project.isDefault ? 'text-yellow-500 font-bold' : 'text-gray-400'
+          }
+          onClick={() => setDefaultProject(project.id)}
+        >
+          ★
+        </button>
       </div>
       {showTasks && (
-        <div className="ml-4 mt-2">
+        <div className="mt-3 space-y-2">
           {project.tasks.map(task => (
             <TareaCard key={task.id} projectId={project.id} task={task} />
           ))}
-          <div className="mt-2 flex">
+          <div className="flex mt-2">
             <input
-              className="border px-1 mr-1"
+              className="border rounded px-2 py-1 mr-2 flex-1"
               value={taskTitle}
               onChange={e => setTaskTitle(e.target.value)}
               placeholder="Nueva tarea"
             />
-            <button className="bg-blue-500 text-white px-2" onClick={handleAddTask}>
+            <button
+              className="bg-blue-600 text-white px-3 rounded"
+              onClick={handleAddTask}
+            >
               Agregar
             </button>
           </div>

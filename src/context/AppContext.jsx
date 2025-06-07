@@ -17,25 +17,58 @@ export const AppProvider = ({ children }) => {
   }, [projects])
 
   const addProject = (name) => {
-    setProjects([...projects, { id: Date.now(), name, tasks: [] }])
+    const newProject = {
+      id: Date.now(),
+      name,
+      tasks: [],
+      isDefault: projects.length === 0,
+    }
+    setProjects([...projects, newProject])
+  }
+
+  const setDefaultProject = (projectId) => {
+    setProjects(projects.map(p => ({ ...p, isDefault: p.id === projectId })))
   }
 
   const addTask = (projectId, title) => {
-    setProjects(projects.map(p => p.id === projectId ? { ...p, tasks: [...p.tasks, { id: Date.now(), title, activities: [], status: 'backlog' }] } : p))
+    setProjects(
+      projects.map(p =>
+        p.id === projectId
+          ? {
+              ...p,
+              tasks: [
+                ...p.tasks,
+                { id: Date.now(), title, status: 'backlog' },
+              ],
+            }
+          : p
+      )
+    )
   }
 
-  const addActivity = (projectId, taskId, activity) => {
-    setProjects(projects.map(p => {
-      if (p.id !== projectId) return p
-      return {
-        ...p,
-        tasks: p.tasks.map(t => t.id === taskId ? { ...t, activities: [...t.activities, { ...activity, id: Date.now() }] } : t)
-      }
-    }))
+  const setTaskStatus = (projectId, taskId, status) => {
+    setProjects(
+      projects.map(p => {
+        if (p.id !== projectId) return p
+        return {
+          ...p,
+          tasks: p.tasks.map(t =>
+            t.id === taskId ? { ...t, status } : t
+          ),
+        }
+      })
+    )
   }
+
 
   return (
-    <AppContext.Provider value={{ projects, addProject, addTask, addActivity }}>
+    <AppContext.Provider value={{
+      projects,
+      addProject,
+      addTask,
+      setTaskStatus,
+      setDefaultProject,
+    }}>
       {children}
     </AppContext.Provider>
   )

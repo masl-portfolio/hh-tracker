@@ -16,4 +16,4 @@ Aplicación de escritorio para registrar horas trabajadas por proyecto. Usa Reac
 - `src/views/` vistas principales de la aplicación.
 - `electron/` código principal de Electron.
 
-La aplicación muestra proyectos y tareas con sus actividades y permite llevar el control de horas y pagos.
+La aplicación permite crear proyectos y gestionar tareas. Puedes marcar un proyecto como predeterminado y cambiar el estado de cada tarea. La interfaz usa Tailwind CSS para un aspecto limpio y profesional.

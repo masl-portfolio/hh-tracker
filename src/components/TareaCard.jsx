@@ -1,29 +1,25 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext } from 'react'
 import AppContext from '../context/AppContext'
-import ActividadForm from './ActividadForm'
-import HistorialActividades from './HistorialActividades'
 
 const TareaCard = ({ projectId, task }) => {
-  const { addActivity } = useContext(AppContext)
-  const [showForm, setShowForm] = useState(false)
-
-  const handleAddActivity = (activity) => {
-    addActivity(projectId, task.id, activity)
-    setShowForm(false)
-  }
+  const { setTaskStatus } = useContext(AppContext)
 
   return (
-    <div className="border p-2 mb-2">
-      <div className="flex justify-between">
-        <h3 className="font-semibold">{task.title}</h3>
-        <button onClick={() => setShowForm(!showForm)} className="text-sm text-blue-600">
-          {showForm ? 'Cancelar' : 'Nueva actividad'}
-        </button>
+    <div className="bg-white rounded-lg border border-gray-200 p-3 mb-2">
+      <div className="flex justify-between items-center">
+        <h3 className="font-medium text-gray-800">{task.title}</h3>
+        <select
+          value={task.status}
+          onChange={e => setTaskStatus(projectId, task.id, e.target.value)}
+          className="text-sm border rounded px-1 py-0.5"
+        >
+          <option value="backlog">Backlog</option>
+          <option value="en desarrollo">En desarrollo</option>
+          <option value="bloqueada">Bloqueada</option>
+          <option value="completada">Completada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
       </div>
-      {showForm && (
-        <ActividadForm onSubmit={handleAddActivity} />
-      )}
-      <HistorialActividades activities={task.activities} />
     </div>
   )
 }
