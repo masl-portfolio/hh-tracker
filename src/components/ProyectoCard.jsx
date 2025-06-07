@@ -3,7 +3,7 @@ import AppContext from '../context/AppContext'
 import TareaCard from './TareaCard'
 
 const ProyectoCard = ({ project }) => {
-  const { addTask } = useContext(AppContext)
+  const { addTask, setDefaultProject } = useContext(AppContext)
   const [showTasks, setShowTasks] = useState(false)
   const [taskTitle, setTaskTitle] = useState('')
 
@@ -14,11 +14,14 @@ const ProyectoCard = ({ project }) => {
   }
 
   return (
-    <div className="border p-2 mb-2">
+    <div className={`border p-2 mb-2 ${project.isDefault ? 'bg-yellow-100' : ''}`}>
       <div className="flex justify-between items-center">
         <h2 className="font-bold" onClick={() => setShowTasks(!showTasks)}>
           {project.name}
         </h2>
+        <button onClick={() => setDefaultProject(project.id)} className="text-xl">
+          {project.isDefault ? '★' : '☆'}
+        </button>
       </div>
       {showTasks && (
         <div className="ml-4 mt-2">
