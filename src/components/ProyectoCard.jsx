@@ -1,4 +1,12 @@
 import React, { useState, useContext } from 'react'
+import {
+  FiEdit,
+  FiTrash2,
+  FiPlus,
+  FiStar,
+  FiChevronDown,
+  FiChevronRight,
+} from 'react-icons/fi'
 import AppContext from '../context/AppContext'
 import TareaCard from './TareaCard'
 
@@ -24,36 +32,44 @@ const ProyectoCard = ({ project }) => {
     <div className="bg-white rounded-lg border border-gray-300 p-4 mb-4 shadow-sm">
       <div className="flex justify-between items-center">
         <h2
-          className="font-semibold text-lg cursor-pointer text-gray-800"
+          className="font-semibold text-lg cursor-pointer text-gray-800 flex items-center"
           onClick={() => setShowTasks(!showTasks)}
         >
+          {showTasks ? (
+            <FiChevronDown className="inline mr-1" />
+          ) : (
+            <FiChevronRight className="inline mr-1" />
+          )}
           {project.name}
         </h2>
         <div className="space-x-2 text-sm">
           <button
+            aria-label="Proyecto predeterminado"
             className={
               project.isDefault ? 'text-yellow-500 font-bold' : 'text-gray-400'
             }
             onClick={() => setDefaultProject(project.id)}
           >
-            ★
+            <FiStar />
           </button>
           <button
+            aria-label="Editar proyecto"
             className="text-blue-600"
             onClick={() => {
               const name = prompt('Nuevo nombre', project.name)
               if (name) editProject(project.id, name)
             }}
           >
-            Editar
+            <FiEdit />
           </button>
           <button
+            aria-label="Eliminar proyecto"
             className="text-red-600"
             onClick={() => {
               if (confirm('Eliminar proyecto?')) deleteProject(project.id)
             }}
           >
-            Eliminar
+            <FiTrash2 />
           </button>
         </div>
       </div>
@@ -77,10 +93,11 @@ const ProyectoCard = ({ project }) => {
               placeholder="HH"
             />
             <button
+              aria-label="Agregar tarea"
               className="bg-blue-600 text-white px-3 rounded"
               onClick={handleAddTask}
             >
-              Agregar
+              <FiPlus />
             </button>
           </div>
         </div>
