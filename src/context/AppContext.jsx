@@ -9,19 +9,25 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const stored = localStorage.getItem('hh-data')
     if (stored) {
-      const parsed = JSON.parse(stored)
-      const normalized = parsed.map(p => ({
-        ...p,
-        tasks: p.tasks.map(t => ({
-          ...t,
-          activities: t.activities || [],
-          estimatedHours: t.estimatedHours || 0,
-        })),
-      }))
-      setProjects(normalized)
-    } else {
-      setProjects(seedData.projects)
+      try {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length) {
+          const normalized = parsed.map(p => ({
+            ...p,
+            tasks: p.tasks.map(t => ({
+              ...t,
+              activities: t.activities || [],
+              estimatedHours: t.estimatedHours || 0,
+            })),
+          }))
+          setProjects(normalized)
+          return
+        }
+      } catch (err) {
+        console.error('Invalid storage data', err)
+      }
     }
+    setProjects(seedData.projects)
   }, [])
 
   useEffect(() => {
