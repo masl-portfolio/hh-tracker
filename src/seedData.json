@@ -1,0 +1,27 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "name": "Proyecto Ejemplo",
+      "isDefault": true,
+      "tasks": [
+        {
+          "id": 11,
+          "title": "Tarea inicial",
+          "status": "backlog",
+          "estimatedHours": 5,
+          "activities": [
+            {
+              "id": 111,
+              "title": "Primer registro",
+              "hours": 1,
+              "observation": "",
+              "status": "en progreso",
+              "date": "2024-01-01T10:00:00Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

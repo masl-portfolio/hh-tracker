@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { FiSave } from 'react-icons/fi'
 
 const QuickActividadForm = ({ onSubmit }) => {
   const [title, setTitle] = useState('')
@@ -42,8 +43,12 @@ const QuickActividadForm = ({ onSubmit }) => {
         placeholder="Horas"
       />
       <span className="text-sm mr-1">{Math.floor(timer / 60)}m</span>
-      <button className="bg-green-500 text-white px-2" onClick={handleSubmit}>
-        Guardar
+      <button
+        aria-label="Guardar actividad"
+        className="bg-green-500 text-white px-2"
+        onClick={handleSubmit}
+      >
+        <FiSave />
       </button>
     </div>
   )
