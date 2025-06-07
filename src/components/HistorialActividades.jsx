@@ -1,4 +1,5 @@
 import React, { useContext } from 'react'
+import { FiEdit, FiTrash2 } from 'react-icons/fi'
 import AppContext from '../context/AppContext'
 const HistorialActividades = ({ projectId, taskId, activities }) => {
   const { editActivity, deleteActivity } = useContext(AppContext)
@@ -16,6 +17,7 @@ const HistorialActividades = ({ projectId, taskId, activities }) => {
             </div>
             <div className="space-x-2 text-sm">
               <button
+                aria-label="Editar actividad"
                 className="text-blue-600"
                 onClick={() => {
                   const title = prompt('Título', act.title)
@@ -30,16 +32,17 @@ const HistorialActividades = ({ projectId, taskId, activities }) => {
                   }
                 }}
               >
-                Editar
+                <FiEdit />
               </button>
               <button
+                aria-label="Eliminar actividad"
                 className="text-red-600"
                 onClick={() => {
                   if (confirm('Eliminar actividad?'))
                     deleteActivity(projectId, taskId, act.id)
                 }}
               >
-                Eliminar
+                <FiTrash2 />
               </button>
             </div>
           </div>
