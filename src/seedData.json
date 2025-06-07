@@ -3,6 +3,9 @@
     {
       "id": 1,
       "name": "Proyecto Ejemplo",
+      "contact": "Juan Perez",
+      "email": "juan@example.com",
+      "description": "Proyecto de muestra",
       "isDefault": true,
       "tasks": [
         {

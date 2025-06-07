@@ -14,6 +14,9 @@ export const AppProvider = ({ children }) => {
         if (Array.isArray(parsed) && parsed.length) {
           const normalized = parsed.map(p => ({
             ...p,
+            contact: p.contact || '',
+            email: p.email || '',
+            description: p.description || '',
             tasks: p.tasks.map(t => ({
               ...t,
               activities: t.activities || [],
@@ -38,6 +41,9 @@ export const AppProvider = ({ children }) => {
     const newProject = {
       id: Date.now(),
       name,
+      contact: '',
+      email: '',
+      description: '',
       tasks: [],
       isDefault: projects.length === 0,
     }
@@ -102,8 +108,10 @@ export const AppProvider = ({ children }) => {
     )
   }
 
-  const editProject = (projectId, name) => {
-    setProjects(projects.map(p => (p.id === projectId ? { ...p, name } : p)))
+  const editProject = (projectId, updates) => {
+    setProjects(
+      projects.map(p => (p.id === projectId ? { ...p, ...updates } : p))
+    )
   }
 
   const deleteProject = (projectId) => {

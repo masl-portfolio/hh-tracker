@@ -56,8 +56,26 @@ const ProyectoCard = ({ project }) => {
             aria-label="Editar proyecto"
             className="text-blue-600"
             onClick={() => {
-              const name = prompt('Nuevo nombre', project.name)
-              if (name) editProject(project.id, name)
+              const name = prompt('Nombre del proyecto', project.name)
+              if (name === null) return
+              const contact = prompt(
+                'Persona contacto (opcional)',
+                project.contact || ''
+              )
+              if (contact === null) return
+              const email = prompt('Email (opcional)', project.email || '')
+              if (email === null) return
+              const description = prompt(
+                'Descripción (opcional)',
+                project.description || ''
+              )
+              if (description === null) return
+              editProject(project.id, {
+                name,
+                contact,
+                email,
+                description,
+              })
             }}
           >
             <FiEdit />
@@ -75,6 +93,13 @@ const ProyectoCard = ({ project }) => {
       </div>
       {showTasks && (
         <div className="mt-3 space-y-2">
+          {(project.contact || project.email || project.description) && (
+            <div className="text-sm text-gray-700 mb-2">
+              {project.contact && <div>Contacto: {project.contact}</div>}
+              {project.email && <div>Email: {project.email}</div>}
+              {project.description && <div>{project.description}</div>}
+            </div>
+          )}
           {project.tasks.map(task => (
             <TareaCard key={task.id} projectId={project.id} task={task} />
           ))}
