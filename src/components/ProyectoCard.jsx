@@ -6,11 +6,13 @@ const ProyectoCard = ({ project }) => {
   const { addTask, setDefaultProject } = useContext(AppContext)
   const [showTasks, setShowTasks] = useState(false)
   const [taskTitle, setTaskTitle] = useState('')
+  const [taskHours, setTaskHours] = useState('0')
 
   const handleAddTask = () => {
     if (!taskTitle) return
-    addTask(project.id, taskTitle)
+    addTask(project.id, taskTitle, taskHours)
     setTaskTitle('')
+    setTaskHours('0')
   }
 
   return (
@@ -42,6 +44,13 @@ const ProyectoCard = ({ project }) => {
               value={taskTitle}
               onChange={e => setTaskTitle(e.target.value)}
               placeholder="Nueva tarea"
+            />
+            <input
+              className="border rounded px-2 py-1 mr-2 w-20"
+              type="number"
+              value={taskHours}
+              onChange={e => setTaskHours(e.target.value)}
+              placeholder="HH"
             />
             <button
               className="bg-blue-600 text-white px-3 rounded"

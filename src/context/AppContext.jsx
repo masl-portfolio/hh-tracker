@@ -8,7 +8,16 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const stored = localStorage.getItem('hh-data')
     if (stored) {
-      setProjects(JSON.parse(stored))
+      const parsed = JSON.parse(stored)
+      const normalized = parsed.map(p => ({
+        ...p,
+        tasks: p.tasks.map(t => ({
+          ...t,
+          activities: t.activities || [],
+          estimatedHours: t.estimatedHours || 0,
+        })),
+      }))
+      setProjects(normalized)
     }
   }, [])
 
@@ -30,7 +39,7 @@ export const AppProvider = ({ children }) => {
     setProjects(projects.map(p => ({ ...p, isDefault: p.id === projectId })))
   }
 
-  const addTask = (projectId, title) => {
+  const addTask = (projectId, title, estimatedHours) => {
     setProjects(
       projects.map(p =>
         p.id === projectId
@@ -38,8 +47,32 @@ export const AppProvider = ({ children }) => {
               ...p,
               tasks: [
                 ...p.tasks,
-                { id: Date.now(), title, status: 'backlog' },
+                {
+                  id: Date.now(),
+                  title,
+                  status: 'backlog',
+                  estimatedHours: parseFloat(estimatedHours) || 0,
+                  activities: [],
+                },
               ],
+            }
+          : p
+      )
+    )
+  }
+
+  const addActivity = (projectId, taskId, activity) => {
+    const newAct = { id: Date.now(), ...activity }
+    setProjects(
+      projects.map(p =>
+        p.id === projectId
+          ? {
+              ...p,
+              tasks: p.tasks.map(t =>
+                t.id === taskId
+                  ? { ...t, activities: [...(t.activities || []), newAct] }
+                  : t
+              ),
             }
           : p
       )
@@ -66,6 +99,7 @@ export const AppProvider = ({ children }) => {
       projects,
       addProject,
       addTask,
+      addActivity,
       setTaskStatus,
       setDefaultProject,
     }}>
