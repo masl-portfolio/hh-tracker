@@ -17,3 +17,6 @@ Aplicación de escritorio para registrar horas trabajadas por proyecto. Usa Reac
 - `electron/` código principal de Electron.
 
 La aplicación permite crear proyectos y gestionar tareas. Cada tarea requiere declarar las horas previstas y puede registrar sesiones de trabajo. Se muestra el total de horas registradas frente a las declaradas para detectar desvíos. También puedes marcar un proyecto como predeterminado y cambiar el estado de cada tarea. La interfaz usa Tailwind CSS para un aspecto limpio y profesional.
+
+### Problemas comunes
+Si al ejecutar `npm run dev` o `npm run build` aparece el mensaje `vite: not found`, asegúrate de haber corrido `npm install` para instalar las dependencias.
