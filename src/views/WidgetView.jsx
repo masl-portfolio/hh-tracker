@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react'
 import AppContext from '../context/AppContext'
 
-const WidgetView = ({ onGoMain }) => {
+const WidgetView = ({ onGoMain, onOpenProjects }) => {
   const { projects, addTask } = useContext(AppContext)
   const defaultProject = projects.find(p => p.isDefault)
   const activeTasks = projects.flatMap(p =>
@@ -22,7 +22,17 @@ const WidgetView = ({ onGoMain }) => {
 
   return (
     <div className="p-4 max-w-sm mx-auto">
-      <h1 className="text-lg font-bold mb-4">Tareas en curso</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-lg font-bold">Tareas en curso</h1>
+        {onOpenProjects && (
+          <button
+            className="text-sm text-blue-600 underline"
+            onClick={onOpenProjects}
+          >
+            Abrir proyectos
+          </button>
+        )}
+      </div>
       {activeTasks.length ? (
         <ul className="space-y-2">
           {activeTasks.map(t => (
