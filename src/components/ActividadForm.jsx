@@ -35,35 +35,47 @@ const ActividadForm = ({ onSubmit }) => {
   }
 
   return (
-    <div className="border p-2 mt-2">
+    <div className="p-4 bg-zinc-800 text-white rounded-xl shadow-md space-y-3">
       <input
-        className="border px-1 mr-1"
+        className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={title}
         onChange={e => setTitle(e.target.value)}
         placeholder="Título"
       />
       <input
-        className="border px-1 mr-1"
+        className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         type="number"
         value={hours}
         onChange={e => setHours(e.target.value)}
         placeholder="Horas"
       />
-      <button className="bg-gray-300 px-2 mr-1" onClick={() => setRunning(!running)}>
-        {running ? 'Pausar' : 'Cronómetro'} ({Math.floor(timer / 60)}m)
-      </button>
-      <select className="border px-1 mr-1" value={status} onChange={e => setStatus(e.target.value)}>
-        {estados.map(e => (
-          <option key={e}>{e}</option>
-        ))}
-      </select>
+      <div className="flex flex-wrap gap-2 items-center">
+        <button
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-sm font-medium rounded-lg transition-colors"
+          onClick={() => setRunning(!running)}
+        >
+          {running ? 'Pausar' : 'Cronómetro'} ({Math.floor(timer / 60)}m)
+        </button>
+        <select
+          className="rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+        >
+          {estados.map(e => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+      </div>
       <input
-        className="border px-1 mr-1"
+        className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={observation}
         onChange={e => setObservation(e.target.value)}
         placeholder="Observación"
       />
-      <button className="bg-green-500 text-white px-2" onClick={handleSubmit}>
+      <button
+        className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        onClick={handleSubmit}
+      >
         Guardar
       </button>
     </div>

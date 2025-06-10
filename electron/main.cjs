@@ -1,29 +1,78 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain, screen } = require('electron')
 const path = require('path')
 
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 420,
-    height: 600,
-    autoHideMenuBar: true,
+app.disableHardwareAcceleration()
+
+let mainWin
+
+function createMainWindow() {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+
+  mainWin = new BrowserWindow({
+    width: 360,
+    height: 280,
+    x: width - 380,
+    y: 40,
+    resizable: false,
+    frame: false,
+    alwaysOnTop: false,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
     },
   })
 
   const devUrl = process.env.VITE_DEV_SERVER_URL
+
   if (devUrl) {
-    win.loadURL(devUrl)
+    const tryLoad = () => {
+      fetch(devUrl)
+        .then(() => mainWin.loadURL(devUrl))
+        .catch(() => setTimeout(tryLoad, 300))
+    }
+    tryLoad()
   } else {
-    win.loadFile(path.join(__dirname, '../dist/index.html'))
+    mainWin.loadFile(path.join(__dirname, 'dist/index.html'))
   }
 }
 
-app.whenReady().then(createWindow)
+function openProyectosWindow() {
+  const proyectosWin = new BrowserWindow({
+    width: 800,
+    height: 600,
+    autoHideMenuBar: true,
+    frame: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+
+  const devUrl = process.env.VITE_DEV_SERVER_URL
+
+  if (devUrl) {
+    proyectosWin.loadURL(`${devUrl}#/proyectos`)
+  } else {
+    proyectosWin.loadFile(path.join(__dirname, 'dist/index.html'), {
+      hash: 'proyectos',
+    })
+  }
+}
+
+// Eventos IPC
+ipcMain.on('minimize-window', () => {
+  if (mainWin) mainWin.minimize()
+})
+
+ipcMain.on('abrir-proyectos', () => {
+  openProyectosWindow()
+})
+
+// Iniciar
+app.whenReady().then(createMainWindow)
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  if (process.platform !== 'darwin') app.quit()
 })

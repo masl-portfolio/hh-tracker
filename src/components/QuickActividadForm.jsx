@@ -28,24 +28,26 @@ const QuickActividadForm = ({ onSubmit }) => {
   }
 
   return (
-    <div className="bg-white rounded shadow p-2 mb-2">
+    <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl shadow-sm p-3 mb-3 flex items-center gap-2">
       <input
-        className="border px-1 mr-1"
+        className="flex-1 bg-white/20 border border-white/20 rounded px-3 py-1 text-sm focus:outline-none"
         value={title}
         onChange={e => setTitle(e.target.value)}
         placeholder="Actividad"
       />
       <input
-        className="border px-1 mr-1"
+        className="w-20 bg-white/20 border border-white/20 rounded px-2 py-1 text-sm text-center focus:outline-none"
         type="number"
         value={hours}
         onChange={e => setHours(e.target.value)}
         placeholder="Horas"
       />
-      <span className="text-sm mr-1">{Math.floor(timer / 60)}m</span>
+      <span className="text-xs text-white/80 w-12 text-center">
+        {Math.floor(timer / 60)}m
+      </span>
       <button
         aria-label="Guardar actividad"
-        className="bg-green-500 text-white px-2"
+        className="bg-green-600 text-white p-2 rounded hover:bg-green-700"
         onClick={handleSubmit}
       >
         <FiSave />
