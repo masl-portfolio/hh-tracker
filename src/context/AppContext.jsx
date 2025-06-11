@@ -8,7 +8,6 @@ export const AppProvider = ({ children }) => {
 
   // --- EFECTOS DE CARGA Y GUARDADO ---
   useEffect(() => {
-    // Cargar proyectos
     const storedProjects = localStorage.getItem('hh-data');
     if (storedProjects) {
       try {
@@ -23,7 +22,6 @@ export const AppProvider = ({ children }) => {
         .then(data => setProjects(data.projects || []))
         .catch(e => console.error('Fallo al cargar seedData.json', e));
     }
-    // Cargar tarea activa
     const savedActiveTask = localStorage.getItem('hh-active-task');
     if (savedActiveTask) {
       try {
@@ -67,36 +65,34 @@ export const AppProvider = ({ children }) => {
       alert('Ya hay una tarea en ejecución. Debes pausarla primero.');
       return;
     }
-    // Añadimos 'observation' al iniciar la tarea
     setActiveTask({ projectId, taskId, startTime: Date.now(), observation: '' });
     setTaskStatus(projectId, taskId, 'en desarrollo');
   };
 
   const pauseTask = () => {
     if (!activeTask) return;
-    // Leemos 'observation' del estado activo para guardarlo
     const { projectId, taskId, startTime, observation } = activeTask;
     const newActivity = {
       description: `Sesión de trabajo`,
       fechaInicio: startTime,
       fechaFin: Date.now(),
-      observation: observation || '', // Guardamos la observación
+      observation: observation || '',
     };
     addActivity(projectId, taskId, newActivity);
     setActiveTask(null);
   };
 
-  // Nueva función para actualizar el comentario de la tarea activa
   const updateActiveTaskObservation = (observation) => {
     if (activeTask) {
       setActiveTask(prev => ({ ...prev, observation }));
     }
   };
 
-  // --- FUNCIONES CRUD (COMPLETAS) ---
+  // --- FUNCIONES CRUD ---
   const addProject = (name) => {
     const newProject = {
       id: Date.now(),
+      createdAt: Date.now(),
       name,
       contact: '',
       email: '',
@@ -111,32 +107,68 @@ export const AppProvider = ({ children }) => {
     setProjects(prev => prev.map(p => ({ ...p, isDefault: p.id === projectId })));
   };
 
-  const addTask = (projectId, title, estimatedHours) => {
+  // MODIFICADO: Ahora acepta 'fechaFinEstimada'
+  const addTask = (projectId, title, estimatedHours, fechaFinEstimada) => {
     const newTask = {
       id: Date.now(),
       title,
       status: 'backlog',
       estimatedHours: parseFloat(estimatedHours) || 0,
+      finalHours: null,
+      fechaFinEstimada: fechaFinEstimada || null, // Guardamos la fecha estimada
+      fechaFinOficial: null, // La fecha oficial empieza nula
       activities: [],
     };
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, tasks: [...p.tasks, newTask] } : p));
   };
 
+  // MODIFICADO: Ahora actualiza 'fechaFinOficial' automáticamente
   const addActivity = (projectId, taskId, activity) => {
     const newAct = { id: Date.now(), ...activity };
-    setProjects(prev => prev.map(p =>
-      p.id === projectId
-        ? { ...p, tasks: p.tasks.map(t =>
-            t.id === taskId ? { ...t, activities: [...(t.activities || []), newAct] } : t
-          )}
-        : p
-    ));
+    setProjects(prevProjects => {
+      return prevProjects.map(p => {
+        if (p.id !== projectId) return p;
+
+        const updatedTasks = p.tasks.map(t => {
+          if (t.id !== taskId) return t;
+
+          // Añadimos la nueva actividad
+          const newActivities = [...(t.activities || []), newAct];
+          
+          // Actualizamos la fecha de fin oficial si la nueva actividad es la más reciente
+          const newFechaFinOficial = (t.fechaFinOficial === null || newAct.fechaFin > t.fechaFinOficial)
+            ? newAct.fechaFin
+            : t.fechaFinOficial;
+
+          return { ...t, activities: newActivities, fechaFinOficial: newFechaFinOficial };
+        });
+
+        return { ...p, tasks: updatedTasks };
+      });
+    });
   };
 
   const setTaskStatus = (projectId, taskId, status) => {
     setProjects(prev => prev.map(p =>
       p.id !== projectId ? p : { ...p, tasks: p.tasks.map(t =>
         t.id === taskId ? { ...t, status } : t
+      )}
+    ));
+  };
+
+  const setFinalTaskHours = (projectId, taskId, hours) => {
+    setProjects(prev => prev.map(p => 
+      p.id !== projectId ? p : { ...p, tasks: p.tasks.map(t => 
+        t.id === taskId ? { ...t, finalHours: hours === null ? null : parseFloat(hours) } : t
+      )}
+    ));
+  };
+
+  // NUEVA FUNCIÓN: Para actualizar manualmente la fecha de fin oficial
+  const setFechaFinOficial = (projectId, taskId, date) => {
+    setProjects(prev => prev.map(p =>
+      p.id !== projectId ? p : { ...p, tasks: p.tasks.map(t =>
+        t.id === taskId ? { ...t, fechaFinOficial: date ? new Date(date).getTime() : null } : t
       )}
     ));
   };
@@ -149,9 +181,12 @@ export const AppProvider = ({ children }) => {
     let newProjects = projects.filter(p => p.id !== projectId);
     const wasDefaultDeleted = !newProjects.find(p => p.isDefault);
     if (wasDefaultDeleted && newProjects.length > 0) {
-      newProjects[0].isDefault = true;
+      const sortedRemaining = newProjects.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      sortedRemaining[0].isDefault = true;
+      setProjects(sortedRemaining);
+    } else {
+      setProjects(newProjects);
     }
-    setProjects(newProjects);
   };
 
   const editTask = (projectId, taskId, updates) => {
@@ -213,6 +248,8 @@ export const AppProvider = ({ children }) => {
       addTask,
       addActivity,
       setTaskStatus,
+      setFinalTaskHours,
+      setFechaFinOficial, // <-- Exportar la nueva función
       editProject,
       deleteProject,
       editTask,

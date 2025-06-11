@@ -1,46 +1,102 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useMemo } from 'react';
 import { 
   FiEdit, 
   FiTrash2, 
-  FiPlus, 
   FiStar, 
   FiChevronDown, 
   FiChevronRight, 
   FiSave, 
   FiX, 
-  FiBarChart2 
+  FiBarChart2,
+  FiDownload,
+  FiCheckCircle, 
+  FiLoader, 
+  FiArchive 
 } from 'react-icons/fi';
 import AppContext from '../context/AppContext';
 import TareaCard from './TareaCard';
-import GraficoEsfuerzo from './GraficoEsfuerzo'; // Asegúrate de que este componente exista
+import GraficoEsfuerzo from './GraficoEsfuerzo';
+import AddTaskForm from './AddTaskForm';
+import { exportProjectToExcel } from '../services/exportService';
+
+// --- COMPONENTE MEJORADO: ProgressBar con contadores e iconos ---
+const ProgressBar = ({ backlog, inProgress, completed }) => {
+  const total = backlog + inProgress + completed;
+
+  const completedPercent = total > 0 ? (completed / total) * 100 : 0;
+  const inProgressPercent = total > 0 ? (inProgress / total) * 100 : 0;
+  const backlogPercent = total > 0 ? (backlog / total) * 100 : 0;
+
+  return (
+    <div className="mt-2 space-y-2">
+      {/* Contadores numéricos */}
+      <div className="flex justify-between items-center text-xs px-1 text-zinc-400">
+        <div className="flex items-center gap-2">
+          <div title={`${completed} tareas completadas`} className="flex items-center gap-1.5">
+            <FiCheckCircle className="text-green-500" />
+            <span>{completed}</span>
+          </div>
+          <div title={`${inProgress} tareas en progreso`} className="flex items-center gap-1.5">
+            <FiLoader className="text-blue-500" />
+            <span>{inProgress}</span>
+          </div>
+          <div title={`${backlog} tareas pendientes`} className="flex items-center gap-1.5">
+            <FiArchive className="text-zinc-500" />
+            <span>{backlog}</span>
+          </div>
+        </div>
+        {total > 0 && <span className="font-semibold">{total} Tareas</span>}
+      </div>
+
+      {/* Barra visual */}
+      <div className="w-full flex h-1.5 rounded-full overflow-hidden bg-zinc-700">
+        {total > 0 ? (
+          <>
+            <div style={{ width: `${completedPercent}%` }} className="bg-green-500 transition-all duration-500"></div>
+            <div style={{ width: `${inProgressPercent}%` }} className="bg-blue-500 transition-all duration-500"></div>
+            <div style={{ width: `${backlogPercent}%` }} className="bg-zinc-500 transition-all duration-500"></div>
+          </>
+        ) : (
+          <div className="w-full h-full bg-zinc-700 relative">
+            <div className='absolute inset-0 flex items-center justify-center text-[10px] text-zinc-400 font-medium'>
+              Sin tareas
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const ProyectoCard = ({ project }) => {
   const { 
-    addTask, 
     setDefaultProject, 
     editProject, 
     deleteProject 
   } = useContext(AppContext);
 
-  // Estados para la funcionalidad interna del card
   const [showTasks, setShowTasks] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [showChart, setShowChart] = useState(false); // Estado para el gráfico
-
-  // Estados para los formularios
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskHours, setTaskHours] = useState('1'); // Default a 1h para nuevas tareas
+  const [showChart, setShowChart] = useState(false);
   const [name, setName] = useState(project.name);
   const [contact, setContact] = useState(project.contact || '');
   const [email, setEmail] = useState(project.email || '');
   const [description, setDescription] = useState(project.description || '');
 
-  const handleAddTask = () => {
-    if (!taskTitle.trim()) return;
-    addTask(project.id, taskTitle.trim(), taskHours);
-    setTaskTitle('');
-    setTaskHours('1');
-  };
+  const taskStats = useMemo(() => {
+    const stats = { backlog: 0, inProgress: 0, completed: 0 };
+    (project.tasks || []).forEach(task => {
+      const status = task.status || 'backlog';
+      if (status === 'completada') {
+        stats.completed++;
+      } else if (status === 'en desarrollo') {
+        stats.inProgress++;
+      } else if (status === 'backlog' || status === 'bloqueada') {
+        stats.backlog++;
+      }
+    });
+    return stats;
+  }, [project.tasks]);
 
   const handleSaveEdit = () => {
     if (!name.trim()) {
@@ -52,7 +108,6 @@ const ProyectoCard = ({ project }) => {
   };
 
   const handleCancelEdit = () => {
-    // Restaura los valores originales al cancelar
     setName(project.name);
     setContact(project.contact || '');
     setEmail(project.email || '');
@@ -66,10 +121,13 @@ const ProyectoCard = ({ project }) => {
     }
   };
 
+  const handleExport = () => {
+    exportProjectToExcel(project);
+  };
+
   return (
     <div className={`border rounded-2xl p-4 mb-3 shadow-lg transition-all duration-300 ${project.isDefault ? 'bg-blue-900/40 border-blue-500 shadow-blue-900/30' : 'bg-zinc-800 border-zinc-700 hover:border-zinc-600'}`}>
       {isEditing ? (
-        // --- VISTA DE EDICIÓN ---
         <div className="space-y-2 text-white">
           <input className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-1.5 text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500" value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del proyecto"/>
           <input className="w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-1.5 text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500" value={contact} onChange={e => setContact(e.target.value)} placeholder="Persona de contacto"/>
@@ -85,15 +143,23 @@ const ProyectoCard = ({ project }) => {
           </div>
         </div>
       ) : (
-        // --- VISTA NORMAL ---
         <>
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2 font-semibold text-lg cursor-pointer text-white" onClick={() => setShowTasks(!showTasks)}>
-              {showTasks ? <FiChevronDown /> : <FiChevronRight />}
-              <span>{project.name}</span>
-              {project.isDefault && <span className="text-xs font-medium bg-blue-500/80 text-white px-2 py-0.5 rounded-full">Default</span>}
+            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setShowTasks(!showTasks)}>
+                <div className="flex items-center gap-2 font-semibold text-lg text-white">
+                    {showTasks ? <FiChevronDown /> : <FiChevronRight />}
+                    <span className="truncate">{project.name}</span>
+                    {project.isDefault && <span className="text-xs font-medium bg-blue-500/80 text-white px-2 py-0.5 rounded-full flex-shrink-0">Default</span>}
+                </div>
             </div>
-            <div className="flex items-center gap-1 text-lg">
+            <div className="flex items-center gap-1 text-lg pl-2">
+              <button
+                title="Exportar a Excel"
+                className="p-2 rounded-full text-zinc-400 hover:text-green-400 hover:bg-zinc-700 transition-colors"
+                onClick={handleExport}
+              >
+                <FiDownload />
+              </button>
               <button
                 title="Ver gráfico de esfuerzo"
                 className={`p-2 rounded-full transition-colors ${showChart ? 'text-blue-400 bg-zinc-700' : 'text-zinc-400 hover:text-blue-400 hover:bg-zinc-700'}`}
@@ -126,7 +192,8 @@ const ProyectoCard = ({ project }) => {
             </div>
           </div>
 
-          {/* Renderizado condicional del gráfico */}
+          <ProgressBar {...taskStats} />
+
           {showChart && <GraficoEsfuerzo tasks={project.tasks} />}
 
           {showTasks && (
@@ -144,33 +211,8 @@ const ProyectoCard = ({ project }) => {
               ) : (
                 <p className="text-center text-sm text-zinc-500 py-4">No hay tareas en este proyecto.</p>
               )}
-
-              {/* Formulario para agregar nueva tarea */}
-              <div className="flex gap-2 pt-2 border-t border-zinc-700/50 mt-4">
-                <input
-                  className="flex-1 bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={taskTitle}
-                  onChange={e => setTaskTitle(e.target.value)}
-                  placeholder="Añadir una nueva tarea..."
-                />
-                <input
-                  className="w-20 bg-zinc-700 border border-zinc-600 rounded-lg px-2 py-1.5 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={taskHours}
-                  onChange={e => setTaskHours(e.target.value)}
-                  title="Horas estimadas"
-                />
-                <button
-                  aria-label="Agregar tarea"
-                  className="bg-blue-600 text-white rounded-lg px-3 py-1.5 hover:bg-blue-700 transition-colors disabled:opacity-50"
-                  onClick={handleAddTask}
-                  disabled={!taskTitle.trim()}
-                >
-                  <FiPlus />
-                </button>
-              </div>
+              
+              <AddTaskForm projectId={project.id} />
             </div>
           )}
         </>

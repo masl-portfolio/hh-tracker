@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { FiPause, FiFolder, FiMinus, FiPlay, FiPlus } from 'react-icons/fi';
+import { FiPause, FiFolder, FiMinus, FiPlay, FiPlus, FiPower } from 'react-icons/fi';
 import AppContext from '../context/AppContext';
 import Cronometro from '../components/Cronometro';
 
@@ -38,6 +38,17 @@ const WidgetView = () => {
   const handleMinimize = () => window.electron?.minimizeWindow();
   const handleOpenProyectos = () => window.electron?.openProyectos();
 
+  // NUEVO: Manejador para cerrar la app de forma segura
+  const handleCloseApp = () => {
+    if (activeTask) {
+      pauseTask(); // Guarda la sesión activa antes de cerrar
+    }
+    // Llama a la función del preload para cerrar, puede que necesite un pequeño delay si el guardado es asíncrono
+    setTimeout(() => {
+        window.electron?.closeApp(); 
+    }, 100);
+  };
+
   // --- RENDERIZADO DEL COMPONENTE ---
   return (
     <div className="w-full h-full p-3 bg-zinc-900 flex flex-col gap-3 text-sm font-sans">
@@ -48,6 +59,8 @@ const WidgetView = () => {
         <div className="flex gap-2 items-center">
           <button className="flex items-center gap-1 text-blue-500 hover:underline text-xs no-drag" onClick={handleOpenProyectos}><FiFolder size={14}/> Proyectos</button>
           <button onClick={handleMinimize} className="text-zinc-500 hover:text-zinc-300 no-drag"><FiMinus size={16}/></button>
+          {/* BOTÓN DE CERRAR AÑADIDO */}
+          <button onClick={handleCloseApp} className="text-zinc-500 hover:text-red-500 no-drag" title="Guardar y Cerrar"><FiPower size={14}/></button>
         </div>
       </div>
 
@@ -76,14 +89,30 @@ const WidgetView = () => {
             
             {pendingTasks.length > 0 ? (
                 <div className="flex-1 space-y-2 overflow-y-auto pr-1">
-                    {pendingTasks.map(task => (
-                        <div key={task.id} className="flex items-center justify-between bg-black/20 p-2 rounded-md">
-                            <span className="text-sm text-zinc-200">{task.title}</span>
-                            <button onClick={() => startTask(defaultProject.id, task.id)} className="p-1.5 bg-green-500 rounded-full hover:bg-green-600 no-drag">
+                    {/* LISTA DE TAREAS REDISEÑADA */}
+                    {pendingTasks.map(task => {
+                      const totalConsumedHours = (task.activities || []).reduce((sum, act) => (act.fechaFin && act.fechaInicio ? sum + (act.fechaFin - act.fechaInicio) : sum), 0) / 3600000;
+                      const estimatedHours = task.estimatedHours || 0;
+                      const progressPercent = estimatedHours > 0 ? (totalConsumedHours / estimatedHours) * 100 : 0;
+                      const isExceeded = totalConsumedHours > estimatedHours;
+                      
+                      return (
+                        <div key={task.id} className="flex items-center justify-between bg-black/20 p-2 rounded-md hover:bg-black/40">
+                            <div className="flex-1 min-w-0 pr-2">
+                                <p className="text-sm text-zinc-200 truncate">{task.title}</p>
+                                <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
+                                    <span>{totalConsumedHours.toFixed(1)}h / {estimatedHours}h</span>
+                                </div>
+                                <div className="w-full bg-zinc-700 rounded-full h-1 mt-1.5">
+                                    <div className={`h-1 rounded-full ${isExceeded ? 'bg-red-500' : 'bg-green-500'}`} style={{ width: `${Math.min(100, progressPercent)}%` }}></div>
+                                </div>
+                            </div>
+                            <button onClick={() => startTask(defaultProject.id, task.id)} className="p-2 bg-green-500 rounded-full hover:bg-green-600 no-drag">
                                 <FiPlay size={14} className="ml-0.5"/>
                             </button>
                         </div>
-                    ))}
+                      );
+                    })}
                 </div>
             ) : (
                 <p className="flex-1 text-center text-xs text-zinc-500 py-4">¡Todas las tareas completadas!</p>

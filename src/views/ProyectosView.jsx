@@ -1,12 +1,28 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import AppContext from '../context/AppContext';
 import ProyectoCard from '../components/ProyectoCard';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiStar } from 'react-icons/fi';
 
 const ProyectosView = () => {
   const { projects, addProject } = useContext(AppContext);
   const [projectName, setProjectName] = useState('');
 
+  // Lógica para ordenar por fecha y separar el proyecto predeterminado
+  const { defaultProject, otherProjects } = useMemo(() => {
+    // Asegurar que cada proyecto tenga un 'createdAt' para evitar errores de ordenación.
+    // Usamos el 'id' (que es un timestamp) como fallback si 'createdAt' no existe en datos antiguos.
+    const projectsWithDate = projects.map(p => ({ ...p, createdAt: p.createdAt || p.id }));
+    
+    // Ordenar todos los proyectos por fecha de creación descendente (el más nuevo primero)
+    const sortedProjects = [...projectsWithDate].sort((a, b) => b.createdAt - a.createdAt);
+    
+    // Separar la lista en dos
+    const defaultProj = sortedProjects.find(p => p.isDefault);
+    const otherProjs = sortedProjects.filter(p => !p.isDefault);
+    
+    return { defaultProject: defaultProj, otherProjects: otherProjs };
+  }, [projects]);
+  
   const handleAddProject = () => {
     if (!projectName.trim()) return;
     addProject(projectName.trim());
@@ -20,9 +36,7 @@ const ProyectosView = () => {
   };
 
   return (
-    // CAMBIO APLICADO: Se reemplaza 'bg-zinc-900' por 'animated-gradient-background'
     <div className="min-h-screen animated-gradient-background text-white p-6 flex flex-col items-center font-sans">
-      
       <div className="w-full max-w-2xl">
         <div className="w-full mb-4">
           <button
@@ -60,18 +74,38 @@ const ProyectosView = () => {
           </button>
         </div>
 
-        <div className="w-full space-y-3">
-          {projects.length > 0 ? (
-            projects.map(p => (
-              <ProyectoCard key={p.id} project={p} />
-            ))
-          ) : (
-            <div className="text-center text-zinc-500 p-8 border-2 border-dashed border-zinc-700 rounded-xl">
-              <p className="font-semibold">No hay proyectos.</p>
-              <p className="text-sm">¡Agrega el primero para empezar a trabajar!</p>
+        {/* Sección destacada para el proyecto predeterminado */}
+        {defaultProject && (
+            <div className='mb-8'>
+                <h2 className='flex items-center gap-2 text-sm font-semibold text-yellow-400 mb-2 px-1'>
+                    <FiStar/> Proyecto Predeterminado
+                </h2>
+                <ProyectoCard key={defaultProject.id} project={defaultProject} />
             </div>
-          )}
-        </div>
+        )}
+
+        {/* Lista de otros proyectos */}
+        {otherProjects.length > 0 && (
+          <div className="w-full space-y-3">
+            {/* Solo mostramos el título "Otros Proyectos" si hay un proyecto default, para no ser redundante */}
+            {(defaultProject) && (
+                 <h2 className='text-sm font-semibold text-zinc-400 mb-2 px-1'>
+                    Otros Proyectos
+                </h2>
+            )}
+            {otherProjects.map(p => (
+              <ProyectoCard key={p.id} project={p} />
+            ))}
+          </div>
+        )}
+
+        {/* Mensaje cuando no hay ningún proyecto */}
+        {projects.length === 0 && (
+          <div className="text-center text-zinc-500 p-8 border-2 border-dashed border-zinc-700 rounded-xl">
+            <p className="font-semibold">No hay proyectos.</p>
+            <p className="text-sm">¡Agrega el primero para empezar a trabajar!</p>
+          </div>
+        )}
       </div>
     </div>
   );

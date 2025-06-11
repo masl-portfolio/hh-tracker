@@ -2,6 +2,7 @@
   "projects": [
     {
       "id": 1,
+      "createdAt": 1716500000000,
       "name": "HH-Tracker App",
       "contact": "Cliente Interno",
       "email": "dev@team.com",
@@ -13,20 +14,23 @@
           "title": "Diseño de la Interfaz del Widget",
           "status": "completada",
           "estimatedHours": 2,
+          "finalHours": 1.5,
+          "fechaFinEstimada": 1716595200000,
+          "fechaFinOficial": 1716414000000,
           "activities": [
             {
               "id": 1011,
               "description": "Sesión de trabajo",
               "fechaInicio": 1716408000000,
               "fechaFin": 1716411600000,
-              "observation": "Primera iteración del diseño del widget. Se definieron los componentes principales."
+              "observation": "Primera iteración del diseño del widget."
             },
             {
               "id": 1012,
               "description": "Sesión de trabajo",
               "fechaInicio": 1716412200000,
               "fechaFin": 1716414000000,
-              "observation": "Ajustes de UI basados en el feedback inicial. Mejorado el contraste de colores."
+              "observation": "Ajustes de UI basados en el feedback."
             }
           ]
         },
@@ -35,13 +39,16 @@
           "title": "Implementar Lógica del Temporizador",
           "status": "en desarrollo",
           "estimatedHours": 3,
+          "finalHours": 2.5,
+          "fechaFinEstimada": 1716422400000,
+          "fechaFinOficial": 1716498000000,
           "activities": [
             {
               "id": 1021,
               "description": "Sesión de trabajo",
               "fechaInicio": 1716487200000,
               "fechaFin": 1716498000000,
-              "observation": "Se me complicó la sincronización entre ventanas, tomó más tiempo de lo esperado."
+              "observation": "Sincronización entre ventanas tomó más tiempo."
             }
           ]
         },
@@ -50,12 +57,16 @@
           "title": "Crear Gráfico de Esfuerzo con Recharts",
           "status": "backlog",
           "estimatedHours": 4,
+          "finalHours": null,
+          "fechaFinEstimada": 1716854400000,
+          "fechaFinOficial": null,
           "activities": []
         }
       ]
     },
     {
       "id": 2,
+      "createdAt": 1716400000000,
       "name": "Marketing y Lanzamiento",
       "contact": "Equipo de Marketing",
       "email": "marketing@team.com",
