@@ -74,5 +74,40 @@
       "isDefault": false,
       "tasks": []
     }
+  ],
+  "events": [
+    {
+      "id": 1001,
+      "createdAt": 1716510000000,
+      "type": "pendiente",
+      "title": "Revisar documentación de la API de pagos",
+      "details": "Verificar los endpoints para la integración con Stripe.",
+      "isCompleted": false,
+      "completedAt": null,
+      "projectId": 1,
+      "taskId": null
+    },
+    {
+      "id": 1002,
+      "createdAt": 1716450000000,
+      "type": "decision",
+      "title": "Se usará Recharts para los gráficos",
+      "details": "Decisión tomada en la reunión de equipo. Se descarta Chart.js por la facilidad de integración de Recharts con React.",
+      "isCompleted": true,
+      "completedAt": 1716450100000,
+      "projectId": 1,
+      "taskId": 103
+    },
+    {
+      "id": 1003,
+      "createdAt": 1716350000000,
+      "type": "nota",
+      "title": "Llamar al contador",
+      "details": "Recordar preguntar sobre la facturación del último trimestre.",
+      "isCompleted": false,
+      "completedAt": null,
+      "projectId": null,
+      "taskId": null
+    }
   ]
 }

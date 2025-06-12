@@ -4,62 +4,126 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
+  const [events, setEvents] = useState([]);
   const [activeTask, setActiveTask] = useState(null);
+
+  // --- LÓGICA DE AUTOMATIZACIÓN ---
+  const generarAvisosDeVencimiento = (tasks, currentEvents) => {
+    const newAvisos = [];
+    const unaSemanaEnMs = 7 * 24 * 60 * 60 * 1000;
+    const ahora = Date.now();
+
+    const todasLasTareas = tasks.flatMap(p => 
+        (p.tasks || []).map(t => ({...t, projectId: p.id}))
+    );
+
+    todasLasTareas.forEach(task => {
+      const idAviso = `aviso-tarea-${task.id}`;
+      const avisoYaExiste = currentEvents.some(e => e.id === idAviso);
+      
+      if (task.fechaFinEstimada && !avisoYaExiste && task.status !== 'completada' && task.status !== 'cancelada') {
+        const tiempoRestante = new Date(task.fechaFinEstimada).getTime() - ahora;
+        
+        if (tiempoRestante > 0 && tiempoRestante <= unaSemanaEnMs) {
+          newAvisos.push({
+            id: idAviso,
+            createdAt: ahora,
+            type: 'aviso',
+            isSystemGenerated: true,
+            title: `Vencimiento: ${task.title}`,
+            details: `Fecha de entrega estimada: ${new Date(task.fechaFinEstimada).toLocaleDateString()}`,
+            isCompleted: false,
+            completedAt: null,
+            projectId: task.projectId,
+            taskId: task.id
+          });
+        }
+      }
+    });
+    return newAvisos;
+  };
 
   // --- EFECTOS DE CARGA Y GUARDADO ---
   useEffect(() => {
-    const storedProjects = localStorage.getItem('hh-data');
-    if (storedProjects) {
+    const loadInitialData = async () => {
+      let initialProjects = [];
+      let initialEvents = [];
+
       try {
-        const parsed = JSON.parse(storedProjects);
-        setProjects(parsed);
-      } catch (e) {
-        console.error('Fallo al parsear proyectos desde localStorage', e);
-      }
-    } else {
-      fetch('/seedData.json')
-        .then(res => res.json())
-        .then(data => setProjects(data.projects || []))
-        .catch(e => console.error('Fallo al cargar seedData.json', e));
-    }
-    const savedActiveTask = localStorage.getItem('hh-active-task');
-    if (savedActiveTask) {
+        const storedProjects = localStorage.getItem('hh-data');
+        if (storedProjects) initialProjects = JSON.parse(storedProjects);
+        else {
+          const res = await fetch('/seedData.json');
+          const data = await res.json();
+          initialProjects = data.projects || [];
+        }
+      } catch (e) { console.error('Fallo al cargar proyectos', e); }
+
       try {
-        setActiveTask(JSON.parse(savedActiveTask));
-      } catch (e) {
-        localStorage.removeItem('hh-active-task');
-      }
-    }
+        const storedEvents = localStorage.getItem('hh-events-data');
+        if (storedEvents) initialEvents = JSON.parse(storedEvents);
+        else {
+           const res = await fetch('/seedData.json');
+           const data = await res.json();
+           initialEvents = data.events || [];
+        }
+      } catch (e) { console.error('Fallo al cargar eventos', e); }
+
+      // Generar avisos al cargar y asegurarse de no duplicar
+      const avisos = generarAvisosDeVencimiento(initialProjects, initialEvents);
+      const uniqueEvents = [...initialEvents, ...avisos.filter(aviso => !initialEvents.some(ev => ev.id === aviso.id))];
+      
+      setProjects(initialProjects);
+      setEvents(uniqueEvents);
+
+      const savedActiveTask = localStorage.getItem('hh-active-task');
+      if (savedActiveTask) try { setActiveTask(JSON.parse(savedActiveTask)); } catch (e) {}
+    };
+
+    loadInitialData();
   }, []);
 
   useEffect(() => {
-    if (projects.length > 0) {
-      localStorage.setItem('hh-data', JSON.stringify(projects));
-    }
+    if (projects.length > 0) localStorage.setItem('hh-data', JSON.stringify(projects));
   }, [projects]);
+  
+  useEffect(() => {
+    // Permite guardar un array vacío para borrar todos los eventos
+    if (events) localStorage.setItem('hh-events-data', JSON.stringify(events));
+  }, [events]);
 
   useEffect(() => {
-    if (activeTask) {
-      localStorage.setItem('hh-active-task', JSON.stringify(activeTask));
-    } else {
-      localStorage.removeItem('hh-active-task');
-    }
+    if (activeTask) localStorage.setItem('hh-active-task', JSON.stringify(activeTask));
+    else localStorage.removeItem('hh-active-task');
   }, [activeTask]);
 
   useEffect(() => {
     const handleStorageChange = (event) => {
-      if (event.key === 'hh-data' && event.newValue) {
-        try { setProjects(JSON.parse(event.newValue)); } catch (e) {}
-      }
-      if (event.key === 'hh-active-task') {
-        try { setActiveTask(event.newValue ? JSON.parse(event.newValue) : null); } catch(e) {}
-      }
+      if (event.key === 'hh-data' && event.newValue) try { setProjects(JSON.parse(event.newValue)); } catch (e) {}
+      if (event.key === 'hh-events-data' && event.newValue) try { setEvents(JSON.parse(event.newValue)); } catch (e) {}
+      if (event.key === 'hh-active-task') try { setActiveTask(event.newValue ? JSON.parse(event.newValue) : null); } catch(e) {}
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // --- FUNCIONES DEL TEMPORIZADOR ---
+  // --- FUNCIONES CRUD PARA EVENTOS ---
+  const addEvent = (eventData) => {
+    const newEvent = { id: Date.now(), createdAt: Date.now(), isCompleted: false, completedAt: null, ...eventData };
+    setEvents(prev => [...prev, newEvent]);
+  };
+  
+  const toggleEventCompleted = (eventId) => {
+    setEvents(prev => prev.map(e => 
+      e.id === eventId ? { ...e, isCompleted: !e.isCompleted, completedAt: !e.isCompleted ? Date.now() : null } : e
+    ));
+  };
+
+  const deleteEvent = (eventId) => {
+    setEvents(prev => prev.filter(e => e.id !== eventId));
+  };
+  
+  // --- FUNCIONES DEL TEMPORIZADOR Y TAREAS ---
   const startTask = (projectId, taskId) => {
     if (activeTask) {
       alert('Ya hay una tarea en ejecución. Debes pausarla primero.');
@@ -88,7 +152,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // --- FUNCIONES CRUD ---
   const addProject = (name) => {
     const newProject = {
       id: Date.now(),
@@ -107,7 +170,6 @@ export const AppProvider = ({ children }) => {
     setProjects(prev => prev.map(p => ({ ...p, isDefault: p.id === projectId })));
   };
 
-  // MODIFICADO: Ahora acepta 'fechaFinEstimada'
   const addTask = (projectId, title, estimatedHours, fechaFinEstimada) => {
     const newTask = {
       id: Date.now(),
@@ -115,45 +177,44 @@ export const AppProvider = ({ children }) => {
       status: 'backlog',
       estimatedHours: parseFloat(estimatedHours) || 0,
       finalHours: null,
-      fechaFinEstimada: fechaFinEstimada || null, // Guardamos la fecha estimada
-      fechaFinOficial: null, // La fecha oficial empieza nula
+      fechaFinEstimada: fechaFinEstimada || null,
+      fechaFinOficial: null,
       activities: [],
     };
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, tasks: [...p.tasks, newTask] } : p));
   };
 
-  // MODIFICADO: Ahora actualiza 'fechaFinOficial' automáticamente
   const addActivity = (projectId, taskId, activity) => {
     const newAct = { id: Date.now(), ...activity };
     setProjects(prevProjects => {
       return prevProjects.map(p => {
         if (p.id !== projectId) return p;
-
         const updatedTasks = p.tasks.map(t => {
           if (t.id !== taskId) return t;
-
-          // Añadimos la nueva actividad
           const newActivities = [...(t.activities || []), newAct];
-          
-          // Actualizamos la fecha de fin oficial si la nueva actividad es la más reciente
-          const newFechaFinOficial = (t.fechaFinOficial === null || newAct.fechaFin > t.fechaFinOficial)
-            ? newAct.fechaFin
-            : t.fechaFinOficial;
-
+          const newFechaFinOficial = (t.fechaFinOficial === null || newAct.fechaFin > t.fechaFinOficial) ? newAct.fechaFin : t.fechaFinOficial;
           return { ...t, activities: newActivities, fechaFinOficial: newFechaFinOficial };
         });
-
         return { ...p, tasks: updatedTasks };
       });
     });
   };
-
+  
+  // MODIFICADO: Ahora sincroniza el aviso de vencimiento
   const setTaskStatus = (projectId, taskId, status) => {
     setProjects(prev => prev.map(p =>
       p.id !== projectId ? p : { ...p, tasks: p.tasks.map(t =>
         t.id === taskId ? { ...t, status } : t
       )}
     ));
+
+    // Si la tarea se completa o cancela, buscamos su aviso y lo completamos también
+    if (status === 'completada' || status === 'cancelada') {
+      const idAviso = `aviso-tarea-${taskId}`;
+      setEvents(currentEvents => currentEvents.map(e => 
+        e.id === idAviso && !e.isCompleted ? { ...e, isCompleted: true, completedAt: Date.now() } : e
+      ));
+    }
   };
 
   const setFinalTaskHours = (projectId, taskId, hours) => {
@@ -164,7 +225,6 @@ export const AppProvider = ({ children }) => {
     ));
   };
 
-  // NUEVA FUNCIÓN: Para actualizar manualmente la fecha de fin oficial
   const setFechaFinOficial = (projectId, taskId, date) => {
     setProjects(prev => prev.map(p =>
       p.id !== projectId ? p : { ...p, tasks: p.tasks.map(t =>
@@ -239,7 +299,11 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{
       projects,
+      events,
       activeTask,
+      addEvent,
+      toggleEventCompleted,
+      deleteEvent,
       startTask,
       pauseTask,
       updateActiveTaskObservation,
@@ -249,7 +313,7 @@ export const AppProvider = ({ children }) => {
       addActivity,
       setTaskStatus,
       setFinalTaskHours,
-      setFechaFinOficial, // <-- Exportar la nueva función
+      setFechaFinOficial,
       editProject,
       deleteProject,
       editTask,

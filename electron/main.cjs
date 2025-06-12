@@ -1,22 +1,24 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
 
+// Deshabilitar la aceleración por hardware puede ayudar en algunos entornos, mantenemos la línea.
 app.disableHardwareAcceleration();
 
-let mainWin;
+let mainWin; // Ventana principal (Widget/Dashboard)
+let proyectosWin; // Ventana secundaria para la gestión de proyectos
 
 function createMainWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const { width } = screen.getPrimaryDisplay().workAreaSize;
 
   mainWin = new BrowserWindow({
-    width: 360,
-    height: 360, // Aumenté un poco la altura para el nuevo diseño del widget
-    x: width - 380,
+    width: 400, // Un poco más ancho para el layout de 3 columnas
+    height: 768, // Altura aumentada significativamente para el dashboard
+    x: width - 420, // Ajustado al nuevo ancho
     y: 40,
-    resizable: false,
+    resizable: true, // Permitir redimensionar puede ser útil para el dashboard
     frame: false,
     alwaysOnTop: false,
-    transparent: true, // Para que los bordes redondeados se vean bien en el widget
+    transparent: true, // Mantenemos la transparencia para el diseño sin marco
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -24,19 +26,33 @@ function createMainWindow() {
     },
   });
 
+  // Asegurarse de que al cerrar la ventana principal, se cierre la app
+  mainWin.on('closed', () => {
+    mainWin = null;
+    app.quit();
+  });
+
   const devUrl = process.env.VITE_DEV_SERVER_URL;
 
   if (devUrl) {
     mainWin.loadURL(devUrl);
+    // Opcional: abrir las herramientas de desarrollo para la ventana principal
+    // mainWin.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWin.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 }
 
 function openProyectosWindow() {
-  const proyectosWin = new BrowserWindow({
-    width: 900, // Un poco más ancho para la comodidad
-    height: 700,
+  // Si la ventana ya existe, simplemente la enfocamos.
+  if (proyectosWin && !proyectosWin.isDestroyed()) {
+    proyectosWin.focus();
+    return;
+  }
+
+  proyectosWin = new BrowserWindow({
+    width: 1024,
+    height: 768,
     autoHideMenuBar: true,
     frame: true,
     webPreferences: {
@@ -44,6 +60,11 @@ function openProyectosWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  // Limpiar la referencia cuando la ventana se cierra
+  proyectosWin.on('closed', () => {
+    proyectosWin = null;
   });
 
   const devUrl = process.env.VITE_DEV_SERVER_URL;
@@ -57,20 +78,16 @@ function openProyectosWindow() {
   }
 }
 
-// --- Eventos IPC ---
+// --- Eventos IPC (Inter-Process Communication) ---
 
 ipcMain.on('minimize-window', () => {
   if (mainWin) mainWin.minimize();
 });
 
-// Corregí el nombre del evento para que coincida con el preload.js
 ipcMain.on('open-proyectos', () => {
   openProyectosWindow();
 });
 
-// --- NUEVO EVENTO AÑADIDO ---
-// Escucha la señal 'close-app' enviada desde cualquier ventana
-// a través del preload y cierra la aplicación completamente.
 ipcMain.on('close-app', () => {
   app.quit();
 });
@@ -81,12 +98,14 @@ ipcMain.on('close-app', () => {
 app.whenReady().then(createMainWindow);
 
 app.on('window-all-closed', () => {
+  // En macOS es común que la aplicación se mantenga activa
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('activate', () => {
+  // En macOS, re-crear la ventana si se hace clic en el ícono del dock y no hay otras ventanas abiertas.
   if (BrowserWindow.getAllWindows().length === 0) {
     createMainWindow();
   }
