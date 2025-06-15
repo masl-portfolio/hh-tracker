@@ -1,88 +1,68 @@
+/* src/index.css (COMPLETO Y FINAL) */
+
+/* 1. Directivas de Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
+/* 2. Estilos base para la aplicación */
+html, body, #root {
+  @apply h-full m-0 p-0 bg-transparent;
   font-family: 'Inter', sans-serif;
-  background-color: #f9fafb;
 }
 
-
-
+/* 3. Animaciones y Clases de Utilidad */
 @keyframes gradient-animation {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
-
 .animated-gradient-background {
   background: linear-gradient(-45deg, #0f172a, #1e293b, #0f172a, #334155);
   background-size: 400% 400%;
   animation: gradient-animation 15s ease infinite;
 }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.animate-fade-in-fast { animation: fadeIn 0.2s ease-out forwards; }
+.animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
+.drag-area { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
 
-/* En src/index.css */
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.animate-fade-in-fast {
-  animation: fadeIn 0.2s ease-out forwards;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.2s ease-out forwards;
-}
-
-.drag-area {
-  -webkit-app-region: drag;
-}
-.no-drag {
-  -webkit-app-region: no-drag;
-}
-
-/* ... tu CSS existente ... */
-
-/* --- Estilos para un Scroll Moderno --- */
-/* Funciona en navegadores basados en WebKit (Chrome, Safari, Edge) y Firefox */
-
-/* Para WebKit */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+/* 4. Estilos para un Scroll Moderno */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background-color: #404040; /* zinc-700 */
-  border-radius: 20px;
+  background-color: #52525b;
+  border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
+::-webkit-scrollbar-thumb:hover { background-color: #718096; }
+* { scrollbar-width: thin; scrollbar-color: #52525b transparent; }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: #52525b; /* zinc-600 */
+/* 5. Estilos para react-datepicker */
+.react-datepicker-popper {
+  z-index: 9999 !important;
 }
+.react-datepicker {
+  @apply bg-zinc-800 border-zinc-700 rounded-lg shadow-lg;
+  font-family: 'Inter', sans-serif;
+}
+.react-datepicker__header { @apply bg-zinc-900/50 border-b border-zinc-700; }
+.react-datepicker__current-month,
+.react-datepicker__navigation-icon::before { @apply text-zinc-300; }
+.react-datepicker__day-name, .react-datepicker__day { @apply text-zinc-400; }
+.react-datepicker__day:hover { @apply bg-zinc-700 text-white rounded-full; }
+.react-datepicker__day--selected, .react-datepicker__day--in-range { @apply bg-blue-600 text-white rounded-full; }
+.react-datepicker__day--selected:hover { @apply bg-blue-700; }
+.react-datepicker__day--keyboard-selected { @apply bg-zinc-700 text-white rounded-full; }
+.react-datepicker__day--disabled { @apply text-zinc-600; }
 
-/* Para Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #404040 transparent;
+/* 6. Estilos para ocultar las flechas en inputs de tipo 'number' */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
+input[type='number'] { -moz-appearance: textfield; }

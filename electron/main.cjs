@@ -1,24 +1,37 @@
+// electron/main.js (COMPLETO Y FINAL)
+
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
 
-// Deshabilitar la aceleración por hardware puede ayudar en algunos entornos, mantenemos la línea.
 app.disableHardwareAcceleration();
 
-let mainWin; // Ventana principal (Widget/Dashboard)
-let proyectosWin; // Ventana secundaria para la gestión de proyectos
+let mainWin;
+let proyectosWin;
+
+// Ancho fijo para la ventana del widget. Puedes ajustarlo si lo necesitas.
+const WINDOW_WIDTH = 480;
 
 function createMainWindow() {
-  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  // --- CORRECCIÓN CLAVE ---
+  // 1. Obtenemos el tamaño del "área de trabajo", que ya excluye la barra de tareas.
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
 
   mainWin = new BrowserWindow({
-    width: 400, // Un poco más ancho para el layout de 3 columnas
-    height: 768, // Altura aumentada significativamente para el dashboard
-    x: width - 420, // Ajustado al nuevo ancho
-    y: 40,
-    resizable: true, // Permitir redimensionar puede ser útil para el dashboard
+    width: WINDOW_WIDTH,
+
+    // 2. La altura de la ventana es ahora exactamente la altura del área de trabajo.
+    height: screenHeight,
+    
+    // 3. La posición 'x' la ancla a la derecha.
+    x: screenWidth - WINDOW_WIDTH - 20, // 20px de margen derecho.
+
+    // 4. La posición 'y' es 0 para que empiece en el borde superior del área de trabajo.
+    y: 0, 
+
+    resizable: false, // Recomendado para que el usuario no pueda cambiar el tamaño.
     frame: false,
     alwaysOnTop: false,
-    transparent: true, // Mantenemos la transparencia para el diseño sin marco
+    transparent: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -26,30 +39,24 @@ function createMainWindow() {
     },
   });
 
-  // Asegurarse de que al cerrar la ventana principal, se cierre la app
   mainWin.on('closed', () => {
     mainWin = null;
     app.quit();
   });
 
   const devUrl = process.env.VITE_DEV_SERVER_URL;
-
   if (devUrl) {
     mainWin.loadURL(devUrl);
-    // Opcional: abrir las herramientas de desarrollo para la ventana principal
-    // mainWin.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWin.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 }
 
 function openProyectosWindow() {
-  // Si la ventana ya existe, simplemente la enfocamos.
   if (proyectosWin && !proyectosWin.isDestroyed()) {
     proyectosWin.focus();
     return;
   }
-
   proyectosWin = new BrowserWindow({
     width: 1024,
     height: 768,
@@ -61,51 +68,36 @@ function openProyectosWindow() {
       nodeIntegration: false,
     },
   });
-
-  // Limpiar la referencia cuando la ventana se cierra
-  proyectosWin.on('closed', () => {
-    proyectosWin = null;
-  });
-
+  proyectosWin.on('closed', () => { proyectosWin = null; });
   const devUrl = process.env.VITE_DEV_SERVER_URL;
-
   if (devUrl) {
     proyectosWin.loadURL(`${devUrl}#/proyectos`);
   } else {
-    proyectosWin.loadFile(path.join(__dirname, '../dist/index.html'), {
-      hash: 'proyectos',
-    });
+    proyectosWin.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'proyectos' });
   }
 }
 
 // --- Eventos IPC (Inter-Process Communication) ---
 
-ipcMain.on('minimize-window', () => {
-  if (mainWin) mainWin.minimize();
-});
+// El manejador 'set-window-height' que teníamos antes ya no es necesario
+// porque la ventana ahora tiene una altura fija al 100% del área de trabajo.
 
-ipcMain.on('open-proyectos', () => {
-  openProyectosWindow();
-});
-
-ipcMain.on('close-app', () => {
-  app.quit();
-});
+// Manejadores existentes que no cambian
+ipcMain.on('minimize-window', () => { if (mainWin) mainWin.minimize(); });
+ipcMain.on('open-proyectos', openProyectosWindow);
+ipcMain.on('close-app', () => { app.quit(); });
 
 
 // --- Ciclo de vida de la aplicación ---
-
 app.whenReady().then(createMainWindow);
 
 app.on('window-all-closed', () => {
-  // En macOS es común que la aplicación se mantenga activa
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('activate', () => {
-  // En macOS, re-crear la ventana si se hace clic en el ícono del dock y no hay otras ventanas abiertas.
   if (BrowserWindow.getAllWindows().length === 0) {
     createMainWindow();
   }
