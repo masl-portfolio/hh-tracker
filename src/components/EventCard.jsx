@@ -7,21 +7,22 @@ import {
   FiUsers, 
   FiFlag, 
   FiTrash2, 
-  FiAlertTriangle 
+  FiAlertTriangle,
+  FiCheckCircle // ----- CAMBIO 1: Importar el nuevo icono de check -----
 } from 'react-icons/fi';
 
-// Objeto para mapear tipos de evento a sus estilos e iconos
+// ----- CAMBIO 2: Añadir colores de fondo para las etiquetas de tipo -----
 const eventTypeStyles = {
-  nota: { icon: FiPaperclip, color: 'text-zinc-400' },
-  pendiente: { icon: FiSquare, color: 'text-blue-400' },
-  decision: { icon: FiCheckSquare, color: 'text-purple-400' },
-  acuerdo: { icon: FiUsers, color: 'text-teal-400' },
-  hito: { icon: FiFlag, color: 'text-yellow-400' },
-  aviso: { icon: FiAlertTriangle, color: 'text-orange-400' }
+  nota: { icon: FiPaperclip, color: 'text-zinc-400', bgColor: 'bg-zinc-600/20' },
+  pendiente: { icon: FiSquare, color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
+  decision: { icon: FiCheckSquare, color: 'text-purple-400', bgColor: 'bg-purple-500/10' },
+  acuerdo: { icon: FiUsers, color: 'text-teal-400', bgColor: 'bg-teal-500/10' },
+  hito: { icon: FiFlag, color: 'text-yellow-400', bgColor: 'bg-yellow-500/10' },
+  aviso: { icon: FiAlertTriangle, color: 'text-orange-400', bgColor: 'bg-orange-500/10' }
 };
 
-const EventCard = ({ event }) => {
-  const { toggleEventCompleted, deleteEvent, projects } = useContext(AppContext);
+const EventCard = ({ event, onDeleteRequest }) => {
+  const { toggleEventCompleted, projects } = useContext(AppContext);
 
   // Obtener los estilos o usar valores por defecto
   const style = eventTypeStyles[event.type] || eventTypeStyles.nota;
@@ -43,10 +44,8 @@ const EventCard = ({ event }) => {
   }
 
   const handleDelete = (e) => {
-    e.stopPropagation(); // Evitar que el clic en el botón active el toggle del checkbox
-    if(window.confirm(`¿Seguro que quieres eliminar el evento: "${event.title}"?`)) {
-      deleteEvent(event.id);
-    }
+    e.stopPropagation();
+    onDeleteRequest(event);
   };
 
   return (
@@ -59,14 +58,15 @@ const EventCard = ({ event }) => {
     >
       <div className="flex items-start gap-3">
         {/* Checkbox y icono */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2 pt-0.5">
           <button 
             onClick={() => toggleEventCompleted(event.id)} 
             className="flex-shrink-0"
             title={event.isCompleted ? 'Marcar como pendiente' : 'Marcar como completado'}
           >
             {event.isCompleted 
-              ? <FiCheckSquare className="text-green-500" size={20} />
+              // ----- CAMBIO 3: Usar el nuevo icono FiCheckCircle -----
+              ? <FiCheckCircle className="text-green-500" size={20} />
               : <EventIcon className={style.color} size={20} />
             }
           </button>
@@ -83,13 +83,21 @@ const EventCard = ({ event }) => {
             </p>
           )}
 
-          {/* Información de contexto (Proyecto/Tarea) */}
-          {contextInfo && (
-            <div className="mt-2 text-[10px] text-zinc-500 bg-black/20 px-2 py-1 rounded w-fit">
-              <span>{contextInfo.projectName}</span>
-              {contextInfo.taskName && <span> {' > '} {contextInfo.taskName}</span>}
-            </div>
-          )}
+          {/* ----- CAMBIO 4: Contenedor para la etiqueta de tipo y el contexto ----- */}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {/* Etiqueta de Tipo de Evento */}
+            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${style.color} ${style.bgColor}`}>
+              {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+            </span>
+
+            {/* Información de contexto (Proyecto/Tarea) */}
+            {contextInfo && (
+              <div className="text-[11px] text-zinc-500">
+                <span>{contextInfo.projectName}</span>
+                {contextInfo.taskName && <span> {' > '} {contextInfo.taskName}</span>}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Botón de eliminar */}

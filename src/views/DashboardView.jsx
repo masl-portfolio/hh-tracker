@@ -1,12 +1,11 @@
-// src/views/DashboardView.js (COMPLETO Y FINAL)
-
 import React, { useContext, useState, useMemo } from 'react';
 import AppContext from '../context/AppContext';
 import EventCard from '../components/EventCard';
 import AddEventForm from '../components/AddEventForm';
 import Cronometro from '../components/Cronometro';
 import AddTaskForm from '../components/AddTaskForm';
-// El Header ya no se importa ni se usa aquí
+// ----- CAMBIO 1: Importar el Modal de Confirmación -----
+import ModalConfirmacion from '../components/ModalConfirmacion'; 
 import { 
   FiPlay, FiPause, FiAlertTriangle, FiList, FiPlus,
   FiCheckCircle, FiLock, FiSidebar, FiChevronDown,
@@ -21,20 +20,48 @@ const DashboardView = () => {
     startTask, 
     pauseTask, 
     updateActiveTaskObservation,
-    setTaskStatus
+    setTaskStatus,
+    // ----- CAMBIO 2: Obtener la función deleteEvent del contexto -----
+    deleteEvent 
   } = useContext(AppContext);
 
   const [eventFilter, setEventFilter] = useState('pending');
   const [projectFilter, setProjectFilter] = useState('all');
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
   const [showAddEventForm, setShowAddEventForm] = useState(false);
-  const [hoveredTaskId, setHoveredTaskId] = useState(null);
   const [showVencimientos, setShowVencimientos] = useState(true);
   const [showTareasClave, setShowTareasClave] = useState(true);
   const [showAgenda, setShowAgenda] = useState(true);
   const [showBitacora, setShowBitacora] = useState(true);
-  
+
+  // ----- CAMBIO 3: Añadir estado para el modal -----
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    eventToDelete: null,
+  });
+
   const isFocusMode = useMemo(() => activeTask !== null, [activeTask]);
+
+  // ----- CAMBIO 4: Crear funciones para manejar el ciclo de vida del modal -----
+  
+  // Esta función se llamará desde EventCard para solicitar la eliminación
+  const handleRequestDeleteEvent = (event) => {
+    setModalState({ isOpen: true, eventToDelete: event });
+  };
+
+  // Esta función se ejecutará si el usuario confirma en el modal
+  const handleConfirmDelete = () => {
+    if (modalState.eventToDelete) {
+      deleteEvent(modalState.eventToDelete.id);
+    }
+    // Cierra el modal y limpia el estado
+    setModalState({ isOpen: false, eventToDelete: null });
+  };
+
+  // Esta función se ejecutará si el usuario cancela
+  const handleCancelDelete = () => {
+    setModalState({ isOpen: false, eventToDelete: null });
+  };
 
   const filteredEvents = useMemo(() => {
     let tempEvents = [...events].sort((a, b) => b.createdAt - a.createdAt);
@@ -67,11 +94,19 @@ const DashboardView = () => {
     : 'xl:grid-cols-3';
 
   return (
-    // Este div ahora es el contenedor principal de la vista, es relativo para el footer
-    // y ocupa toda la altura que le da su padre <main> en App.jsx
     <div className="relative h-full overflow-y-auto">
       
-      {/* Contenido del Grid */}
+      {/* ----- CAMBIO 5: Renderizar el modal de confirmación ----- */}
+      <ModalConfirmacion
+        isOpen={modalState.isOpen}
+        titulo="Eliminar Evento"
+        mensaje={`¿Estás seguro de que quieres eliminar el evento "${modalState.eventToDelete?.title}"? Esta acción no se puede deshacer.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        textoConfirmar="Sí, eliminar"
+        textoCancelar="Cancelar"
+      />
+
       <div className={`grid gap-6 max-w-7xl mx-auto w-full p-4 lg:p-6 pb-24 no-drag ${gridLayoutClass}`}>
         
         {/* Columna Agenda de Hoy */}
@@ -90,7 +125,14 @@ const DashboardView = () => {
                   {showVencimientos && (
                     <div className="space-y-2 animate-fade-in-fast pl-1">
                       {filteredEvents.filter(e => e.type === 'aviso' && !e.isCompleted).length > 0 ? (
-                        filteredEvents.filter(e => e.type === 'aviso' && !e.isCompleted).map(event => <EventCard key={event.id} event={event} />)
+                        filteredEvents.filter(e => e.type === 'aviso' && !e.isCompleted).map(event => 
+                          <EventCard 
+                            key={event.id} 
+                            event={event} 
+                            // ----- CAMBIO 6: Pasar la nueva función al EventCard -----
+                            onDeleteRequest={handleRequestDeleteEvent}
+                          />
+                        )
                       ) : (
                         <p className="text-xs text-zinc-500 px-1">¡Sin vencimientos a la vista!</p>
                       )}
@@ -201,7 +243,14 @@ const DashboardView = () => {
                     </div>
                     <div className="flex-1 space-y-2 overflow-y-auto pr-2 max-h-[50vh] xl:max-h-none">
                       {filteredEvents.length > 0 ? (
-                        filteredEvents.map(event => <EventCard key={event.id} event={event} />)
+                        filteredEvents.map(event => 
+                          <EventCard 
+                            key={event.id} 
+                            event={event} 
+                            // ----- CAMBIO 6 (Repetido): Pasar la nueva función al EventCard -----
+                            onDeleteRequest={handleRequestDeleteEvent}
+                          />
+                        )
                       ) : ( <p className="text-center text-xs text-zinc-500 py-6">No hay eventos que coincidan.</p> )}
                     </div>
                   </>
