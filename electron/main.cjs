@@ -45,7 +45,7 @@ async function createWindow() {
     width: 1200,
     height: 800,
     // Tu lógica de dimensiones originales, conservada.
-    minWidth: 800,
+    minWidth: 600,
     minHeight: 880,
     frame: false,
     transparent: true,
